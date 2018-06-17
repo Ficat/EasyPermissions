@@ -6,7 +6,7 @@
     3.若请求的权限未在manifest中注册，将抛出明确的异常<br>
     4.请求之间互不影响，即便每次请求的是相同的权限
 
-##Gradle依赖
+## Gradle依赖
 
 ```gradle
 dependencies {
