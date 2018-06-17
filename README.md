@@ -1,11 +1,18 @@
 # EasyPermissions
 **声明**：本库参考了rxpermissions（[https://github.com/tbruyelle/RxPermissions](https://github.com/tbruyelle/RxPermissions "go to rxpermissions"))<br>
 本库旨在简化安卓6.0及以上版本运行时权限申请流程，特点如下：<br>
-1.链式操作<br>
-2.相较于rxpermissions，无需依赖rxjava<br>
-3.若请求的权限未在manifest中注册，将抛出明确的异常<br>
-4.请求之间互不影响，即便每次请求的是相同的权限
+    1.链式操作<br>
+    2.相较于rxpermissions，无需依赖rxjava<br>
+    3.若请求的权限未在manifest中注册，将抛出明确的异常<br>
+    4.请求之间互不影响，即便每次请求的是相同的权限
 
+##Gradle依赖
+
+```gradle
+dependencies {
+    implementation 'com.github.Ficat:EasyPermissions:v1.0.0'
+}
+```
 ## 使用
 1.创建easypermissions对象
 
@@ -33,7 +40,8 @@ easyPermissions.requestEach(Manifest.permission.CAMERA,Manifest.permission.CALL_
                .subscribe(new RequestSubscriber<Permission>() {
                    @Override
                    public void onPermissionsRequestResult(Permission permission) {
-					   String name = permission.name;//权限名
+                       //权限名
+                       String name = permission.name;
                        if (permission.granted) {
                            //权限被授予
                        } else {
