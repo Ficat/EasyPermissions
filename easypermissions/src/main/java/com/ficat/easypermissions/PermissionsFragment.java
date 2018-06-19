@@ -31,11 +31,11 @@ public class PermissionsFragment extends Fragment {
     void requestPermissions(@NonNull String[] permissions, @NonNull RequestPublisher publisher) {
         List<String> needRequestPermissions = new ArrayList<>();
         for (String permission : permissions) {
-            if (isGranted(permission) || sdkVersionLowerThan23()) {
+            if (sdkVersionLowerThan23() || isGranted(permission)) {
                 publisher.onRequestPermissionsResult(new Permission(permission, true, false));
                 continue;
             }
-            if (isRevoked(permission) && !sdkVersionLowerThan23()) {
+            if (!sdkVersionLowerThan23() && isRevoked(permission)) {
                 publisher.onRequestPermissionsResult(new Permission(permission, false, false));
                 continue;
             }
