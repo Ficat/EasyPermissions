@@ -10,7 +10,7 @@
 
 ```gradle
 dependencies {
-    implementation 'com.github.Ficat:EasyPermissions:v1.0.0'
+    implementation 'com.github.Ficat:EasyPermissions:v1.0.1'
 }
 ```
 ## 使用
