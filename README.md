@@ -4,7 +4,7 @@
     1.链式操作<br>
     2.相较于rxpermissions，无需依赖rxjava<br>
     3.若请求的权限未在manifest中注册，将抛出明确的异常<br>
-    4.请求之间互不影响，即便每次请求的是相同的权限
+    4.请求间互不影响，即使每次请求的是相同权限
 
 ## Gradle依赖
 
@@ -35,6 +35,7 @@ easyPermissions.request(Manifest.permission.CAMERA,Manifest.permission.CALL_PHON
                        }
                    }
                });
+
 //requestEach方式
 easyPermissions.requestEach(Manifest.permission.CAMERA,Manifest.permission.CALL_PHONE)
                .subscribe(new RequestSubscriber<Permission>() {
@@ -50,6 +51,22 @@ easyPermissions.requestEach(Manifest.permission.CAMERA,Manifest.permission.CALL_
                    }
                });
 ```
+## License
 
+```
+Copyright 2018 Ficat
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+```
 
 
