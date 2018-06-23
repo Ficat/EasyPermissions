@@ -8,6 +8,19 @@
 
 ## Gradle依赖
 
+1.在项目根build.gradle中添加
+
+```gradle
+allprojects {
+		repositories {
+			maven { url 'https://jitpack.io' }
+		}
+	}
+}
+```
+
+2.在需要依赖本库的build.gradle中添加
+
 ```gradle
 dependencies {
     implementation 'com.github.Ficat:EasyPermissions:v1.0.1'
