@@ -22,11 +22,11 @@ public class EasyPermissions {
     public EasyPermissions(@NonNull Activity activity) {
         mPermissionsFragment = getPermissionsFragment(activity);
         if (mRegisteredInManifestPermissions == null) {
-            mRegisteredInManifestPermissions = getRegisteredInManifestPermissionsList(activity);
+            mRegisteredInManifestPermissions = getRegisteredInManifestPermissions(activity);
         }
     }
 
-    private List<String> getRegisteredInManifestPermissionsList(Activity activity) {
+    private List<String> getRegisteredInManifestPermissions(Activity activity) {
         if (activity == null) {
             return null;
         }
@@ -111,11 +111,11 @@ public class EasyPermissions {
 
     private void checkPermissions(String... permissions) {
         if (permissions == null || permissions.length == 0) {
-            throw new IllegalArgumentException("the permissions is null or has no input permission");
+            throw new IllegalArgumentException("the permissions is null or there are no input permissions");
         }
-        for (String permission : permissions) {
-            if (!mRegisteredInManifestPermissions.contains(permission)) {
-                throw new IllegalStateException("the permission \"" + permission + "\" is not registered in manifest.xml");
+        for (String p : permissions) {
+            if (!mRegisteredInManifestPermissions.contains(p)) {
+                throw new IllegalStateException("the permission \"" + p + "\" is not registered in manifest.xml");
             }
         }
     }

@@ -43,7 +43,7 @@ public abstract class RequestPublisher<T> {
     protected abstract void onRequestResult(Permission permission);
 
     /**
-     * 结果发布给所有订阅者
+     * Publish the request results to all of subscribers
      */
     protected void publish(T t) {
         for (int i = 0; i < mRequestSubscribers.size(); i++) {
@@ -55,7 +55,7 @@ public abstract class RequestPublisher<T> {
     }
 
     /**
-     * 所有请求权限是否都有了请求结果
+     * Return true if all permissions we request have the request results
      */
     protected boolean hasAllResult() {
         for (String p : mPermissions) {
@@ -68,7 +68,7 @@ public abstract class RequestPublisher<T> {
     }
 
     /**
-     * 权限是否已经有了请求结果
+     * Return true if the permission has the request result
      */
     private boolean hasResult(String permission) {
         if (TextUtils.isEmpty(permission)) {
@@ -84,7 +84,7 @@ public abstract class RequestPublisher<T> {
     }
 
     /**
-     * 判断权限是否包含在本次请求的权限中
+     * Check if permissions we request contain specific permission
      */
     private boolean contains(String permission) {
         if (TextUtils.isEmpty(permission)) {
@@ -99,7 +99,7 @@ public abstract class RequestPublisher<T> {
     }
 
     /**
-     * 请求权限
+     * Request permissions
      */
     private void request() {
         mPermissionsFragment.requestPermissions(mPermissions, this);
