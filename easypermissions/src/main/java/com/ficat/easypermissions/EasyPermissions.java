@@ -2,12 +2,14 @@ package com.ficat.easypermissions;
 
 import android.app.Activity;
 import android.app.FragmentManager;
+import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.support.annotation.NonNull;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -17,34 +19,30 @@ import java.util.List;
 public class EasyPermissions {
     static final String TAG = "PermissionFragment";
     private PermissionsFragment mPermissionsFragment;
-    private static List<String> mRegisteredInManifestPermissions;
+    private static List<String> sRegisteredInManifestPermissions;
 
     public EasyPermissions(@NonNull Activity activity) {
         mPermissionsFragment = getPermissionsFragment(activity);
-        if (mRegisteredInManifestPermissions == null) {
-            mRegisteredInManifestPermissions = getRegisteredInManifestPermissions(activity);
+        if (sRegisteredInManifestPermissions == null) {
+            sRegisteredInManifestPermissions = getRegisteredInManifestPermissions(activity);
         }
     }
 
-    private List<String> getRegisteredInManifestPermissions(Activity activity) {
-        if (activity == null) {
-            return null;
-        }
-        List<String> list = new ArrayList<>();
+    private List<String> getRegisteredInManifestPermissions(Context context) {
         try {
-            PackageInfo packageInfo = activity.getPackageManager().getPackageInfo(activity.getPackageName(), PackageManager.GET_PERMISSIONS);
+            PackageInfo packageInfo = context.getPackageManager().getPackageInfo(context.getPackageName(), PackageManager.GET_PERMISSIONS);
             String[] permissions = packageInfo.requestedPermissions;
             //permissions will be null if no permissions registered in Manifest.xml
-            if (permissions != null) {
-                list.addAll(Arrays.asList(permissions));
+            if (permissions == null || permissions.length == 0) {
+                throw new IllegalStateException("there is no any permission registered in manifest.xml");
             }
+            return Collections.unmodifiableList(Arrays.asList(permissions));
         } catch (PackageManager.NameNotFoundException e) {
-            return null;
+            throw new AssertionError("package name not be found");
         }
-        return list;
     }
 
-    private PermissionsFragment getPermissionsFragment(Activity activity) {
+    private synchronized PermissionsFragment getPermissionsFragment(Activity activity) {
         PermissionsFragment permissionsFragment = (PermissionsFragment) activity.getFragmentManager().findFragmentByTag(TAG);
         if (permissionsFragment == null) {
             permissionsFragment = new PermissionsFragment();
@@ -114,8 +112,8 @@ public class EasyPermissions {
             throw new IllegalArgumentException("the permissions is null or there are no input permissions");
         }
         for (String p : permissions) {
-            if (!mRegisteredInManifestPermissions.contains(p)) {
-                throw new IllegalStateException("the permission \"" + p + "\" is not registered in manifest.xml");
+            if (!sRegisteredInManifestPermissions.contains(p)) {
+                throw new IllegalStateException(String.format("the permission %1$s is not registered in manifest.xml", p));
             }
         }
     }
