@@ -1,7 +1,7 @@
 # EasyPermissions
-**声明**：本库参考了rxpermissions（[https://github.com/tbruyelle/RxPermissions](https://github.com/tbruyelle/RxPermissions "go to rxpermissions"))<br>
-本库旨在简化安卓6.0及以上版本运行时权限申请流程，特点如下：
-* 链式操作
+一个类[RxPermissions](https://github.com/tbruyelle/RxPermissions "go to rxpermissions")的权限库<br>
+特点如下：
+* 和rxpermissions一样均为链式操作
 * 相较于rxpermissions，无需依赖rxjava
 * 若请求的权限未在manifest中注册，将抛出明确的异常
 * 请求间互不影响，即使每次请求的是相同权限
@@ -69,6 +69,10 @@ easyPermissions
            }
        });
 ```
+
+## 致谢
+[RxPermissions](https://github.com/tbruyelle/RxPermissions "go to rxpermissions")
+
 ## License
 
 ```
