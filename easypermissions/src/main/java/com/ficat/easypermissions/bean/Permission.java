@@ -1,4 +1,4 @@
-package com.ficat.easypermissions;
+package com.ficat.easypermissions.bean;
 
 /**
  * Created by ficat on 2018/5/12.

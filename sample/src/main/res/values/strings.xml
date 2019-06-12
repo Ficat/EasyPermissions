@@ -1,5 +1,5 @@
 <resources>
     <string name="app_name">EasyPermissions</string>
-    <string name="camera">CAMERA</string>
-    <string name="location">LOCATION</string>
+    <string name="camera">camera</string>
+    <string name="location">location/storage</string>
 </resources>

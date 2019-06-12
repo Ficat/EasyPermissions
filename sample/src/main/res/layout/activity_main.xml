@@ -13,7 +13,7 @@
         android:layout_height="50dp"
         android:gravity="center"
         android:text="@string/camera"
-        android:textSize="24sp" />
+        android:textSize="22sp" />
 
     <Button
         android:id="@+id/btn_location"
@@ -21,5 +21,5 @@
         android:layout_height="50dp"
         android:gravity="center"
         android:text="@string/location"
-        android:textSize="24sp" />
+        android:textSize="22sp" />
 </LinearLayout>

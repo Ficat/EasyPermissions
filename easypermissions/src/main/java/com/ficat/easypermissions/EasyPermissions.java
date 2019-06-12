@@ -3,11 +3,12 @@ package com.ficat.easypermissions;
 import android.app.Activity;
 import android.app.FragmentManager;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.provider.Settings;
 import android.support.annotation.NonNull;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -15,13 +16,24 @@ import java.util.List;
 /**
  * Created by ficat on 2018/5/12.
  */
-
 public class EasyPermissions {
     static final String TAG = "PermissionFragment";
     private PermissionsFragment mPermissionsFragment;
     private static List<String> sRegisteredInManifestPermissions;
 
-    public EasyPermissions(@NonNull Activity activity) {
+    public static boolean checkSelfPermission(String permission, Context context) {
+        return PermissionsFragment.checkSelfPermission(permission, context);
+    }
+
+    public static void goToSettingsActivity(Activity activity) {
+        activity.startActivity(new Intent(Settings.ACTION_SETTINGS));
+    }
+
+    public static EasyPermissions newInstance(@NonNull Activity activity) {
+        return new EasyPermissions(activity);
+    }
+
+    private EasyPermissions(@NonNull Activity activity) {
         mPermissionsFragment = getPermissionsFragment(activity);
         if (sRegisteredInManifestPermissions == null) {
             sRegisteredInManifestPermissions = getRegisteredInManifestPermissions(activity);
@@ -56,55 +68,14 @@ public class EasyPermissions {
         return permissionsFragment;
     }
 
-    public RequestPublisher<Boolean> request(String... permissions) {
+    public RequestPublisher request(String... permissions) {
         checkPermissions(permissions);
-        return new RequestPublisher<Boolean>(permissions, mPermissionsFragment) {
-            @Override
-            public void subscribe(RequestSubscriber<Boolean> subscriber) {
-                super.subscribe(subscriber);
-                if (hasAllResult()) {
-                    for (Permission p : mResults) {
-                        if (!p.granted) {
-                            subscriber.onPermissionsRequestResult(false);
-                            return;
-                        }
-                    }
-                    subscriber.onPermissionsRequestResult(true);
-                }
-            }
-
-            @Override
-            protected void onRequestResult(Permission permission) {
-                if (hasAllResult()) {
-                    for (Permission p : mResults) {
-                        if (!p.granted) {
-                            publish(false);
-                            return;
-                        }
-                    }
-                    publish(true);
-                }
-            }
-        };
+        return new RequestPublisher(permissions, mPermissionsFragment);
     }
 
-    public RequestPublisher<Permission> requestEach(String... permissions) {
+    public RequestEachPublisher requestEach(String... permissions) {
         checkPermissions(permissions);
-        return new RequestPublisher<Permission>(permissions, mPermissionsFragment) {
-            @Override
-            public void subscribe(RequestSubscriber<Permission> subscriber) {
-                super.subscribe(subscriber);
-                for (Permission p : mResults) {
-                    subscriber.onPermissionsRequestResult(p);
-                }
-            }
-
-            @Override
-            protected void onRequestResult(Permission permission) {
-                publish(permission);
-            }
-
-        };
+        return new RequestEachPublisher(permissions, mPermissionsFragment);
     }
 
     private void checkPermissions(String... permissions) {
@@ -113,7 +84,7 @@ public class EasyPermissions {
         }
         for (String p : permissions) {
             if (!sRegisteredInManifestPermissions.contains(p)) {
-                throw new IllegalStateException(String.format("the permission %1$s is not registered in manifest.xml", p));
+                throw new IllegalStateException("the permission " + p + " is not registered in manifest.xml");
             }
         }
     }

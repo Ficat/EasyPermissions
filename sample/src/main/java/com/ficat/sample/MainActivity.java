@@ -8,9 +8,13 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
+import com.ficat.easypermissions.BaseRequestPublisher;
 import com.ficat.easypermissions.EasyPermissions;
-import com.ficat.easypermissions.Permission;
-import com.ficat.easypermissions.RequestSubscriber;
+import com.ficat.easypermissions.RequestEachPublisher;
+import com.ficat.easypermissions.RequestPublisher;
+import com.ficat.easypermissions.bean.Permission;
+
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
     Button btnCamera, btnLocation;
@@ -20,24 +24,26 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        initView();
+        easyPermissions = EasyPermissions.newInstance(this);
+    }
+
+    private void initView() {
         btnCamera = findViewById(R.id.btn_camera);
         btnLocation = findViewById(R.id.btn_location);
-
         btnCamera.setOnClickListener(this);
         btnLocation.setOnClickListener(this);
-
-        easyPermissions = new EasyPermissions(this);
     }
 
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.btn_camera:
-                easyPermissions.request(Manifest.permission.CAMERA)
-                        .subscribe(new RequestSubscriber<Boolean>() {
+                easyPermissions.requestEach(Manifest.permission.CAMERA)
+                        .subscribe(new RequestEachPublisher.Subscriber() {
                             @Override
-                            public void onPermissionsRequestResult(Boolean aBoolean) {
-                                if (aBoolean) {
+                            public void onPermissionsRequestResult(Permission permission) {
+                                if (permission.granted) {
                                     Toast.makeText(MainActivity.this, "request CAMERA success!", Toast.LENGTH_SHORT).show();
                                 } else {
                                     Toast.makeText(MainActivity.this, "request CAMERA fail!", Toast.LENGTH_SHORT).show();
@@ -46,14 +52,25 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         });
                 break;
             case R.id.btn_location:
-                easyPermissions.requestEach(Manifest.permission.ACCESS_COARSE_LOCATION)
-                        .subscribe(new RequestSubscriber<Permission>() {
+                easyPermissions.request(Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                        .autoRetryWhenUserRefuse(true, new BaseRequestPublisher.RequestAgainListener() {
                             @Override
-                            public void onPermissionsRequestResult(Permission permission) {
-                                if (permission.granted) {
-                                    Toast.makeText(MainActivity.this, "request LOCATION success!", Toast.LENGTH_SHORT).show();
+                            public void requestAgain(String[] needAndCanRequestAgainPermissions) {
+                                for (String s : needAndCanRequestAgainPermissions) {
+                                    Log.e("TAG", "request again permission = "+s);
+                                }
+                            }
+                        })
+                        .subscribe(new RequestPublisher.Subscriber() {
+                            @Override
+                            public void onPermissionsRequestResult(boolean grantAll, List<Permission> results) {
+                                if (grantAll) {
+                                    Toast.makeText(MainActivity.this, "request permissions success!", Toast.LENGTH_SHORT).show();
                                 } else {
-                                    Toast.makeText(MainActivity.this, "request LOCATION fail!", Toast.LENGTH_SHORT).show();
+                                    Toast.makeText(MainActivity.this, "request permissions fail!", Toast.LENGTH_SHORT).show();
+                                }
+                                for (Permission p : results) {
+                                    Log.e("TAG", "name=" + p.name + "   granted=" + p.granted + "   shouldShowRequestPermissionRationale=" + p.shouldShowRequestPermissionRationale);
                                 }
                             }
                         });

@@ -1,107 +1,100 @@
 package com.ficat.easypermissions;
 
-
 import android.support.annotation.NonNull;
-import android.text.TextUtils;
+
+import com.ficat.easypermissions.bean.Permission;
 
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Created by ficat on 2018-05-12.
- */
-
-public abstract class RequestPublisher<T> {
-    protected String[] mPermissions;
-    protected PermissionsFragment mPermissionsFragment;
-    protected List<RequestSubscriber<T>> mRequestSubscribers = new ArrayList<>();
-    protected List<Permission> mResults = new ArrayList<>();
+public class RequestPublisher extends BaseRequestPublisher<RequestPublisher.Subscriber> {
 
     RequestPublisher(@NonNull String[] permissions, @NonNull PermissionsFragment fragment) {
-        this.mPermissions = permissions;
-        this.mPermissionsFragment = fragment;
-        request();
+        super(permissions, fragment);
     }
 
+    public RequestPublisher autoRetryWhenUserRefuse(boolean autoRequestAgain, RequestAgainListener listener) {
+        mAutoRequestAgain = autoRequestAgain;
+        mRequestAgainListener = listener;
+        return this;
+    }
+
+    @Override
+    public void subscribe(Subscriber subscriber) {
+        super.subscribe(subscriber);
+        if (hasAllResult()) {
+            publish(isAllGranted());
+        }
+    }
+
+
+    @Override
     void onRequestPermissionsResult(Permission permission) {
-        if (!contains(permission.name)) {
+        super.onRequestPermissionsResult(permission);
+        if (!hasAllResult()) {
             return;
         }
-        if (!hasResult(permission.name)) {
-            mResults.add(permission);
-        }
-        onRequestResult(permission);
-    }
-
-    public void subscribe(RequestSubscriber<T> subscriber) {
-        if (subscriber == null) {
-            throw new IllegalArgumentException("RequestSubscriber is null");
-        }
-        mRequestSubscribers.add(subscriber);
-    }
-
-    protected abstract void onRequestResult(Permission permission);
-
-    /**
-     * Publish the request results to all of subscribers
-     */
-    protected void publish(T t) {
-        for (int i = 0; i < mRequestSubscribers.size(); i++) {
-            RequestSubscriber<T> subscriber = mRequestSubscribers.get(i);
-            if (subscriber != null) {
-                subscriber.onPermissionsRequestResult(t);
+        if (mAutoRequestAgain) {
+            List<Permission> results = getResults(false);
+            List<Permission> needRequestPermissions = getResults(true);
+            if (needRequestPermissions.size() > 0) {
+                mResults.clear();
+                mResults.addAll(results);
+                String[] needRequestArray = new String[needRequestPermissions.size()];
+                for (int i = 0; i < needRequestPermissions.size(); i++) {
+                    needRequestArray[i] = needRequestPermissions.get(i).name;
+                }
+                if (mRequestAgainListener != null) {
+                    mRequestAgainListener.requestAgain(needRequestArray);
+                }
+                //只请求用户未勾选不再提示的权限，否则将出现一直请求的情况
+                mPermissionsFragment.requestPermissions(needRequestArray, this);
+            } else {
+                publish(isAllGranted());
             }
+        } else {
+            publish(isAllGranted());
         }
     }
 
-    /**
-     * Return true if all permissions we request have the request results
-     */
-    protected boolean hasAllResult() {
-        for (String p : mPermissions) {
-            boolean hasResult = hasResult(p);
-            if (!hasResult) {
+    private boolean isAllGranted() {
+        for (Permission p : mResults) {
+            if (!p.granted) {
                 return false;
             }
         }
         return true;
     }
 
-    /**
-     * Return true if the permission has the request result
-     */
-    private boolean hasResult(String permission) {
-        if (TextUtils.isEmpty(permission)) {
-            return false;
-        }
-        for (int i = 0; i < mResults.size(); i++) {
-            boolean hasResult = mResults.get(i).name.equals(permission);
-            if (hasResult) {
-                return true;
+    private List<Permission> getResults(boolean needAndCanRequestAgain) {
+        List<Permission> list = new ArrayList<>();
+        for (Permission p : mResults) {
+            if (needAndCanRequestAgain) {
+                if (!p.granted && p.shouldShowRequestPermissionRationale) {
+                    list.add(p);
+                }
+            } else {
+                if ((!p.granted && !p.shouldShowRequestPermissionRationale) || p.granted) {
+                    list.add(p);
+                }
             }
         }
-        return false;
+        return list;
     }
 
     /**
-     * Check if permissions we request contain specific permission
+     * Publish the request results to all of subscribers
      */
-    private boolean contains(String permission) {
-        if (TextUtils.isEmpty(permission)) {
-            return false;
-        }
-        for (String p : mPermissions) {
-            if (p.equals(permission)) {
-                return true;
+    private void publish(boolean grantAll) {
+        for (Subscriber s : mSubscribers) {
+            if (s != null) {
+                s.onPermissionsRequestResult(grantAll, mResults);
             }
         }
-        return false;
     }
 
-    /**
-     * Request permissions
-     */
-    private void request() {
-        mPermissionsFragment.requestPermissions(mPermissions, this);
+    public interface Subscriber extends BaseRequestPublisher.Subscriber {
+        void onPermissionsRequestResult(boolean grantAll, List<Permission> results);
     }
+
 }

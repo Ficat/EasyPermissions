@@ -2,10 +2,15 @@ package com.ficat.easypermissions;
 
 import android.annotation.TargetApi;
 import android.app.Fragment;
+import android.content.Context;
+import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.v4.content.PermissionChecker;
+
+import com.ficat.easypermissions.bean.Permission;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -19,7 +24,7 @@ public class PermissionsFragment extends Fragment {
 
     private static final int PERMISSION_REQUEST_CODE = 19;
 
-    private Map<String, List<RequestPublisher>> mPermissionsMap = new HashMap<>();
+    private Map<String, List<BaseRequestPublisher>> mPermissionsMap = new HashMap<>();
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -27,23 +32,42 @@ public class PermissionsFragment extends Fragment {
         setRetainInstance(true);
     }
 
+    static boolean checkSelfPermission(String permission, Context context) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (getTargetVersion(context) >= Build.VERSION_CODES.M) {
+                //targetSdkVersion >= Android M, we can use Context#checkSelfPermission
+                return context.checkSelfPermission(permission) == PackageManager.PERMISSION_GRANTED;
+            } else {
+                // targetSdkVersion < Android M, Context#checkSelfPermission will always
+                // return PERMISSION_GRANTED, even if we cancel permissions in Android Setting,
+                // so we have to use PermissionChecker
+                return PermissionChecker.checkSelfPermission(context, permission) == PermissionChecker.PERMISSION_GRANTED;
+            }
+        } else {// For Android < Android M, self permissions are always granted.
+            return true;
+        }
+    }
+
     @TargetApi(Build.VERSION_CODES.M)
-    void requestPermissions(@NonNull String[] permissions, @NonNull RequestPublisher publisher) {
+    void requestPermissions(@NonNull String[] permissions, @NonNull BaseRequestPublisher publisher) {
         List<String> needRequestPermissions = new ArrayList<>();
         for (String permission : permissions) {
-            if (sdkVersionLowerThan23() || isGranted(permission)) {
+            if (sdkVersionLowerThan23()) {
                 publisher.onRequestPermissionsResult(new Permission(permission, true, false));
                 continue;
             }
-            if (!sdkVersionLowerThan23() && isRevoked(permission)) {
+            if (checkSelfPermission(permission, getActivity())) {
+                publisher.onRequestPermissionsResult(new Permission(permission, true, false));
+                continue;
+            }
+            if (isRevoked(permission)) {//check if users don't give the permission in Android Setting
                 publisher.onRequestPermissionsResult(new Permission(permission, false, false));
                 continue;
             }
-            List<RequestPublisher> list = mPermissionsMap.get(permission);
+            List<BaseRequestPublisher> list = mPermissionsMap.get(permission);
             if (list == null) {
                 list = new ArrayList<>();
                 mPermissionsMap.put(permission, list);
-                //the permission needs requesting if the list is null
                 needRequestPermissions.add(permission);
             }
             if (list.contains(publisher)) {
@@ -51,8 +75,6 @@ public class PermissionsFragment extends Fragment {
             }
             list.add(publisher);
         }
-        //if needRequestPermissions is empty, needRequestPermissionsArray will be
-        //null, which can cause requestPermissions to throw an exception
         if (!needRequestPermissions.isEmpty()) {
             String[] needRequestPermissionsArray = needRequestPermissions.toArray(new String[needRequestPermissions.size()]);
             requestPermissions(needRequestPermissionsArray, PERMISSION_REQUEST_CODE);
@@ -75,7 +97,7 @@ public class PermissionsFragment extends Fragment {
 
     void onRequestPermissionsResult(String permissions[], int[] grantResults, boolean[] shouldShowRequestPermissionRationale) {
         for (int i = 0, size = permissions.length; i < size; i++) {
-            List<RequestPublisher> list = mPermissionsMap.get(permissions[i]);
+            List<BaseRequestPublisher> list = mPermissionsMap.get(permissions[i]);
             if (list == null) {
                 return;
             }
@@ -88,16 +110,26 @@ public class PermissionsFragment extends Fragment {
     }
 
     @TargetApi(Build.VERSION_CODES.M)
-    boolean isGranted(String permission) {
-        return getActivity().checkSelfPermission(permission) == PackageManager.PERMISSION_GRANTED;
-    }
-
-    @TargetApi(Build.VERSION_CODES.M)
     boolean isRevoked(String permission) {
-        return getActivity().getPackageManager().isPermissionRevokedByPolicy(permission, getActivity().getPackageName());
+        if (getTargetVersion(getActivity()) >= Build.VERSION_CODES.M) {
+            return getActivity().getPackageManager().isPermissionRevokedByPolicy(permission, getActivity().getPackageName());
+        } else {
+            return PermissionChecker.checkSelfPermission(getActivity(), permission) != PermissionChecker.PERMISSION_GRANTED;
+        }
     }
 
     boolean sdkVersionLowerThan23() {
         return Build.VERSION.SDK_INT < Build.VERSION_CODES.M;
+    }
+
+    private static int getTargetVersion(Context context) {
+        int targetSdkVersion = -100;
+        try {
+            PackageInfo info = context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
+            targetSdkVersion = info.applicationInfo.targetSdkVersion;
+        } catch (PackageManager.NameNotFoundException e) {
+            e.printStackTrace();
+        }
+        return targetSdkVersion;
     }
 }
