@@ -1,10 +1,9 @@
 # EasyPermissions
-一个类[RxPermissions](https://github.com/tbruyelle/RxPermissions "go to rxpermissions")的权限库<br>
+一个安卓runtime权限库，部分接口名称参考了[RxPermissions](https://github.com/tbruyelle/RxPermissions "go to rxpermissions")<br>
 特点如下：
-* 和rxpermissions一样均为链式操作
-* 相较于rxpermissions，无需依赖rxjava
+* 链式操作
 * 若请求的权限未在manifest中注册，将抛出明确的异常
-* 请求间互不影响，即使每次请求的是相同权限
+* 自动重试，配置该选项后若请求被拒但用户未勾选不再提示框时会自动重试直到用户授权或勾选不再提示框
 
 ## Gradle依赖
 
@@ -22,37 +21,46 @@ allprojects {
 
 ```gradle
 dependencies {
-    implementation 'com.github.Ficat:EasyPermissions:v1.0.1'
+    implementation 'com.github.Ficat:EasyPermissions:v2.0.0'
 }
 ```
 ## 使用
-1.创建easypermissions对象
-
-```java
-EasyPermissions easyPermissions = new EasyPermissions(activity);
-```
-
-2.请求权限
 
 ```java
 //request方式，请求的所有权限被用户授权后返回true，否则返回false  
-easyPermissions
-       .request(Manifest.permission.CAMERA,Manifest.permission.CALL_PHONE)
-       .subscribe(new RequestSubscriber<Boolean>() {
-           @Override
-           public void onPermissionsRequestResult(Boolean granted) {
-               if (granted) {
-                   //摄像头、拨打电话都被用户授权
-               } else {
-                   //摄像头、拨打电话任意一项被拒绝或两者都被拒绝
-               }
-           }
-       });
+EasyPermissions
+        .newInstance(activity)
+        .request(Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+        .autoRetryWhenUserRefuse(true, new BaseRequestPublisher.RequestAgainListener() {//是否自动重试
+            @Override
+            public void requestAgain(String[] needAndCanRequestAgainPermissions) {
+                //该监听回调中传入的是再次请求的权限，用以在重新请求时弹出说明框等信息（如
+                //向用户说明为何要使用该权限）
+                for (String s : needAndCanRequestAgainPermissions) {
+                    Log.e("TAG", "request again permission = "+s);
+                }
+            }
+        })
+        .subscribe(new RequestPublisher.Subscriber() {
+            @Override
+            public void onPermissionsRequestResult(boolean grantAll, List<Permission> results) {
+                if (grantAll) {
+                    Toast.makeText(MainActivity.this, "request permissions success!", Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(MainActivity.this, "request permissions fail!", Toast.LENGTH_SHORT).show();
+                }
+                for (Permission p : results) {
+                    Log.e("TAG", "name=" + p.name + "   granted=" + p.granted + "   shouldShowRequestPermissionRationale=" + p.shouldShowRequestPermissionRationale);
+                }
+            }
+         });
+
 
 //requestEach方式
-easyPermissions
-       .requestEach(Manifest.permission.CAMERA,Manifest.permission.CALL_PHONE)
-       .subscribe(new RequestSubscriber<Permission>() {
+EasyPermissions
+       .newInstance(activity)
+       .requestEach(Manifest.permission.CAMERA)
+       .subscribe(new RequestEachPublisher.Subscriber() {
            @Override
            public void onPermissionsRequestResult(Permission permission) {
                String name = permission.name;
@@ -60,10 +68,11 @@ easyPermissions
                    //name权限被授予
                } else {
                    if (permission.shouldShowRequestPermissionRationale) {
-                       //name权限被拒绝但用户未勾选不再询问框
+                       //name权限被拒绝但用户未勾选不再提示框，可继续请求
                    } else {
-                       //name权限被拒绝且用户勾选了不再询问框
-                       //此时就不能再次请求name权限了，而需要user前往设置界面授权
+                       //name权限被拒绝且用户勾选了不再提示框
+                       //此时不能再次请求了，而需要user前往设置界面手动授权
+                       EasyPermissions.goToSettingsActivity(activity);
                    }
                }
            }
