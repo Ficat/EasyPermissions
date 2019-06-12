@@ -27,6 +27,29 @@ dependencies {
 ## 使用
 
 ```java
+//requestEach方式
+EasyPermissions
+       .newInstance(activity)
+       .requestEach(Manifest.permission.CAMERA)
+       .subscribe(new RequestEachPublisher.Subscriber() {
+           @Override
+           public void onPermissionsRequestResult(Permission permission) {
+               String name = permission.name;
+               if (permission.granted) {
+                   //name权限被授予
+               } else {
+                   if (permission.shouldShowRequestPermissionRationale) {
+                       //name权限被拒绝但用户未勾选不再提示框，可继续请求
+                   } else {
+                       //name权限被拒绝且用户勾选了不再提示框
+                       //此时不能再次请求了，而需要user前往设置界面手动授权
+                       EasyPermissions.goToSettingsActivity(activity);
+                   }
+               }
+           }
+       });
+
+
 //request方式，请求的所有权限被用户授权后返回true，否则返回false  
 EasyPermissions
         .newInstance(activity)
@@ -49,34 +72,8 @@ EasyPermissions
                 } else {
                     Toast.makeText(MainActivity.this, "request permissions fail!", Toast.LENGTH_SHORT).show();
                 }
-                for (Permission p : results) {
-                    Log.e("TAG", "name=" + p.name + "   granted=" + p.granted + "   shouldShowRequestPermissionRationale=" + p.shouldShowRequestPermissionRationale);
-                }
             }
          });
-
-
-//requestEach方式
-EasyPermissions
-       .newInstance(activity)
-       .requestEach(Manifest.permission.CAMERA)
-       .subscribe(new RequestEachPublisher.Subscriber() {
-           @Override
-           public void onPermissionsRequestResult(Permission permission) {
-               String name = permission.name;
-               if (permission.granted) {
-                   //name权限被授予
-               } else {
-                   if (permission.shouldShowRequestPermissionRationale) {
-                       //name权限被拒绝但用户未勾选不再提示框，可继续请求
-                   } else {
-                       //name权限被拒绝且用户勾选了不再提示框
-                       //此时不能再次请求了，而需要user前往设置界面手动授权
-                       EasyPermissions.goToSettingsActivity(activity);
-                   }
-               }
-           }
-       });
 ```
 
 ## 致谢
