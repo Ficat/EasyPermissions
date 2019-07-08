@@ -29,7 +29,7 @@ public class EasyPermissions {
         activity.startActivity(new Intent(Settings.ACTION_SETTINGS));
     }
 
-    public static EasyPermissions newInstance(@NonNull Activity activity) {
+    public static EasyPermissions with(@NonNull Activity activity) {
         return new EasyPermissions(activity);
     }
 
@@ -68,14 +68,14 @@ public class EasyPermissions {
         return permissionsFragment;
     }
 
-    public RequestPublisher request(String... permissions) {
+    public RequestExecutor request(String... permissions) {
         checkPermissions(permissions);
-        return new RequestPublisher(permissions, mPermissionsFragment);
+        return new RequestExecutor(permissions, mPermissionsFragment);
     }
 
-    public RequestEachPublisher requestEach(String... permissions) {
+    public RequestEachExecutor requestEach(String... permissions) {
         checkPermissions(permissions);
-        return new RequestEachPublisher(permissions, mPermissionsFragment);
+        return new RequestEachExecutor(permissions, mPermissionsFragment);
     }
 
     private void checkPermissions(String... permissions) {

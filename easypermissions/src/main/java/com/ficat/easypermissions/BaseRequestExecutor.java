@@ -12,18 +12,17 @@ import java.util.List;
 /**
  * Created by ficat on 2018-05-12.
  */
-public abstract class BaseRequestPublisher<T extends BaseRequestPublisher.Subscriber> {
+public abstract class BaseRequestExecutor<T extends BaseRequestExecutor.ResultReceiver> {
     protected String[] mPermissions;
     protected PermissionsFragment mPermissionsFragment;
-    protected List<T> mSubscribers;
+    protected T mResultReceiver;
     protected List<Permission> mResults;
     protected RequestAgainListener mRequestAgainListener;
     protected boolean mAutoRequestAgain;
 
-    BaseRequestPublisher(@NonNull String[] permissions, @NonNull PermissionsFragment fragment) {
+    BaseRequestExecutor(@NonNull String[] permissions, @NonNull PermissionsFragment fragment) {
         this.mPermissions = permissions;
         this.mPermissionsFragment = fragment;
-        this.mSubscribers = new ArrayList<>();
         this.mResults = new ArrayList<>();
 
         request();
@@ -38,13 +37,11 @@ public abstract class BaseRequestPublisher<T extends BaseRequestPublisher.Subscr
         }
     }
 
-    public void subscribe(T subscriber) {
-        if (subscriber == null) {
-            throw new IllegalArgumentException("BaseRequestSubscriber is null");
+    public void result(T resultReceiver) {
+        if (resultReceiver == null) {
+            throw new IllegalArgumentException("ResultReceiver is null");
         }
-        if (!mSubscribers.contains(subscriber)) {
-            mSubscribers.add(subscriber);
-        }
+        mResultReceiver = resultReceiver;
     }
 
     /**
@@ -97,7 +94,7 @@ public abstract class BaseRequestPublisher<T extends BaseRequestPublisher.Subscr
         mPermissionsFragment.requestPermissions(mPermissions, this);
     }
 
-    public interface Subscriber {
+    public interface ResultReceiver {
 
     }
 

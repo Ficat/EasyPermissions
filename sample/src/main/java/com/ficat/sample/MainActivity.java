@@ -8,24 +8,22 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
-import com.ficat.easypermissions.BaseRequestPublisher;
+import com.ficat.easypermissions.BaseRequestExecutor;
 import com.ficat.easypermissions.EasyPermissions;
-import com.ficat.easypermissions.RequestEachPublisher;
-import com.ficat.easypermissions.RequestPublisher;
+import com.ficat.easypermissions.RequestEachExecutor;
+import com.ficat.easypermissions.RequestExecutor;
 import com.ficat.easypermissions.bean.Permission;
 
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
     Button btnCamera, btnLocation;
-    EasyPermissions easyPermissions;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         initView();
-        easyPermissions = EasyPermissions.newInstance(this);
     }
 
     private void initView() {
@@ -39,8 +37,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.btn_camera:
-                easyPermissions.requestEach(Manifest.permission.CAMERA)
-                        .subscribe(new RequestEachPublisher.Subscriber() {
+                EasyPermissions
+                        .with(this)
+                        .requestEach(Manifest.permission.CAMERA)
+                        .result(new RequestEachExecutor.ResultReceiver() {
                             @Override
                             public void onPermissionsRequestResult(Permission permission) {
                                 if (permission.granted) {
@@ -52,16 +52,18 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         });
                 break;
             case R.id.btn_location:
-                easyPermissions.request(Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                        .autoRetryWhenUserRefuse(true, new BaseRequestPublisher.RequestAgainListener() {
+                EasyPermissions
+                        .with(this)
+                        .request(Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                        .autoRetryWhenUserRefuse(true, new BaseRequestExecutor.RequestAgainListener() {
                             @Override
                             public void requestAgain(String[] needAndCanRequestAgainPermissions) {
                                 for (String s : needAndCanRequestAgainPermissions) {
-                                    Log.e("TAG", "request again permission = "+s);
+                                    Log.e("TAG", "request again permission = " + s);
                                 }
                             }
                         })
-                        .subscribe(new RequestPublisher.Subscriber() {
+                        .result(new RequestExecutor.ResultReceiver() {
                             @Override
                             public void onPermissionsRequestResult(boolean grantAll, List<Permission> results) {
                                 if (grantAll) {

@@ -24,7 +24,7 @@ public class PermissionsFragment extends Fragment {
 
     private static final int PERMISSION_REQUEST_CODE = 19;
 
-    private Map<String, List<BaseRequestPublisher>> mPermissionsMap = new HashMap<>();
+    private Map<String, List<BaseRequestExecutor>> mPermissionsMap = new HashMap<>();
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -49,7 +49,7 @@ public class PermissionsFragment extends Fragment {
     }
 
     @TargetApi(Build.VERSION_CODES.M)
-    void requestPermissions(@NonNull String[] permissions, @NonNull BaseRequestPublisher publisher) {
+    void requestPermissions(@NonNull String[] permissions, @NonNull BaseRequestExecutor publisher) {
         List<String> needRequestPermissions = new ArrayList<>();
         for (String permission : permissions) {
             if (sdkVersionLowerThan23()) {
@@ -64,7 +64,7 @@ public class PermissionsFragment extends Fragment {
                 publisher.onRequestPermissionsResult(new Permission(permission, false, false));
                 continue;
             }
-            List<BaseRequestPublisher> list = mPermissionsMap.get(permission);
+            List<BaseRequestExecutor> list = mPermissionsMap.get(permission);
             if (list == null) {
                 list = new ArrayList<>();
                 mPermissionsMap.put(permission, list);
@@ -97,7 +97,7 @@ public class PermissionsFragment extends Fragment {
 
     void onRequestPermissionsResult(String permissions[], int[] grantResults, boolean[] shouldShowRequestPermissionRationale) {
         for (int i = 0, size = permissions.length; i < size; i++) {
-            List<BaseRequestPublisher> list = mPermissionsMap.get(permissions[i]);
+            List<BaseRequestExecutor> list = mPermissionsMap.get(permissions[i]);
             if (list == null) {
                 return;
             }

@@ -5,23 +5,23 @@ import android.support.annotation.NonNull;
 import com.ficat.easypermissions.bean.Permission;
 
 
-public class RequestEachPublisher extends BaseRequestPublisher<RequestEachPublisher.Subscriber> {
+public class RequestEachExecutor extends BaseRequestExecutor<RequestEachExecutor.ResultReceiver> {
 
-    RequestEachPublisher(@NonNull String[] permissions, @NonNull PermissionsFragment fragment) {
+    RequestEachExecutor(@NonNull String[] permissions, @NonNull PermissionsFragment fragment) {
         super(permissions, fragment);
     }
 
-    public RequestEachPublisher autoRetryWhenUserRefuse(boolean autoRequestAgain, RequestAgainListener listener) {
+    public RequestEachExecutor autoRetryWhenUserRefuse(boolean autoRequestAgain, RequestAgainListener listener) {
         mAutoRequestAgain = autoRequestAgain;
         mRequestAgainListener = listener;
         return this;
     }
 
     @Override
-    public void subscribe(Subscriber subscriber) {
-        super.subscribe(subscriber);
+    public void result(ResultReceiver resultReceiver) {
+        super.result(resultReceiver);
         for (Permission p : mResults) {
-            subscriber.onPermissionsRequestResult(p);
+            resultReceiver.onPermissionsRequestResult(p);
         }
     }
 
@@ -37,25 +37,20 @@ public class RequestEachPublisher extends BaseRequestPublisher<RequestEachPublis
                 }
                 mPermissionsFragment.requestPermissions(permissionArray, this);
             } else {
-                publish(permission);
+                notifyResult(permission);
             }
         } else {
-            publish(permission);
+            notifyResult(permission);
         }
     }
 
-    /**
-     * Publish the request results to all of subscribers
-     */
-    private void publish(Permission permission) {
-        for (Subscriber s : mSubscribers) {
-            if (s != null) {
-                s.onPermissionsRequestResult(permission);
-            }
+    private void notifyResult(Permission permission) {
+        if (mResultReceiver != null) {
+            mResultReceiver.onPermissionsRequestResult(permission);
         }
     }
 
-    public interface Subscriber extends BaseRequestPublisher.Subscriber {
+    public interface ResultReceiver extends BaseRequestExecutor.ResultReceiver {
         void onPermissionsRequestResult(Permission permission);
     }
 }

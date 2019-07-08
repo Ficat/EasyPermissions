@@ -7,26 +7,25 @@ import com.ficat.easypermissions.bean.Permission;
 import java.util.ArrayList;
 import java.util.List;
 
-public class RequestPublisher extends BaseRequestPublisher<RequestPublisher.Subscriber> {
+public class RequestExecutor extends BaseRequestExecutor<RequestExecutor.ResultReceiver> {
 
-    RequestPublisher(@NonNull String[] permissions, @NonNull PermissionsFragment fragment) {
+    RequestExecutor(@NonNull String[] permissions, @NonNull PermissionsFragment fragment) {
         super(permissions, fragment);
     }
 
-    public RequestPublisher autoRetryWhenUserRefuse(boolean autoRequestAgain, RequestAgainListener listener) {
+    public RequestExecutor autoRetryWhenUserRefuse(boolean autoRequestAgain, RequestAgainListener listener) {
         mAutoRequestAgain = autoRequestAgain;
         mRequestAgainListener = listener;
         return this;
     }
 
     @Override
-    public void subscribe(Subscriber subscriber) {
-        super.subscribe(subscriber);
+    public void result(ResultReceiver resultReceiver) {
+        super.result(resultReceiver);
         if (hasAllResult()) {
-            publish(isAllGranted());
+            notifyResult(isAllGranted());
         }
     }
-
 
     @Override
     void onRequestPermissionsResult(Permission permission) {
@@ -50,10 +49,10 @@ public class RequestPublisher extends BaseRequestPublisher<RequestPublisher.Subs
                 //只请求用户未勾选不再提示的权限，否则将出现一直请求的情况
                 mPermissionsFragment.requestPermissions(needRequestArray, this);
             } else {
-                publish(isAllGranted());
+                notifyResult(isAllGranted());
             }
         } else {
-            publish(isAllGranted());
+            notifyResult(isAllGranted());
         }
     }
 
@@ -74,7 +73,7 @@ public class RequestPublisher extends BaseRequestPublisher<RequestPublisher.Subs
                     list.add(p);
                 }
             } else {
-                if ((!p.granted && !p.shouldShowRequestPermissionRationale) || p.granted) {
+                if (p.granted || !p.shouldShowRequestPermissionRationale) {
                     list.add(p);
                 }
             }
@@ -82,18 +81,13 @@ public class RequestPublisher extends BaseRequestPublisher<RequestPublisher.Subs
         return list;
     }
 
-    /**
-     * Publish the request results to all of subscribers
-     */
-    private void publish(boolean grantAll) {
-        for (Subscriber s : mSubscribers) {
-            if (s != null) {
-                s.onPermissionsRequestResult(grantAll, mResults);
-            }
+    private void notifyResult(boolean grantAll) {
+        if (mResultReceiver != null) {
+            mResultReceiver.onPermissionsRequestResult(grantAll, mResults);
         }
     }
 
-    public interface Subscriber extends BaseRequestPublisher.Subscriber {
+    public interface ResultReceiver extends BaseRequestExecutor.ResultReceiver {
         void onPermissionsRequestResult(boolean grantAll, List<Permission> results);
     }
 
